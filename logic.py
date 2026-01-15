@@ -89,7 +89,7 @@ def processa_messaggio(input_utente: str, stato_attuale: ProfiloUtente):
     except Exception as e:
         # Fallback in caso di errore di parsing (succede con modelli piccoli)
         print(f"Errore parsing: {e}")
-        return "Scusa, non ho capito bene. Puoi ripetere cosa hai in frigo?", stato_attuale
+        return "Scusa, non ho capito bene. Puoi ripettere che ingredienti hai?", stato_attuale
 
     # 2. Router: Ho abbastanza info?
     if nuovo_stato.obiettivo_raggiunto:
