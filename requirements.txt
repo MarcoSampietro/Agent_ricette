@@ -1,5 +1,8 @@
-streamlit
-langchain-core
+langchain
 langchain-groq
-python-dotenv
+langchain-community
+langchain-tavily
+tavily-python
 pydantic
+python-dotenv
+streamlit

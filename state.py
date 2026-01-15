@@ -2,29 +2,30 @@ from pydantic import BaseModel, Field
 from typing import List, Optional
 
 class Ingrediente(BaseModel):
-    nome: str = Field(description="Nome dell'ingrediente (es. pasta, uova)")
-    quantita: Optional[str] = Field(description="Quantità approssimativa (es. 500g, un pacco, un po')")
-    scadenza_vicina: bool = Field(default=False, description="True se l'utente indica che sta per scadere")
+    nome: str = Field(description="Nome dell'ingrediente")
+    quantita: Optional[str] = Field(description="Quantità (es. 200g, 2 pezzi)")
+    scadenza_vicina: bool = Field(default=False)
 
 class ProfiloUtente(BaseModel):
-    ingredienti: List[Ingrediente] = Field(default_factory=list, description="Lista degli ingredienti disponibili")
-    vincoli_alimentari: List[str] = Field(default_factory=list, description="Allergie, diete o cibi non graditi")
-    obiettivo_raggiunto: bool = Field(default=False, description="True se abbiamo abbastanza info per le ricette")
+    ingredienti: List[Ingrediente] = Field(default_factory=list)
+    vincoli_alimentari: List[str] = Field(default_factory=list)
+    # Slot Obbligatori
+    n_persone: Optional[int] = Field(None, description="Numero di commensali")
+    vincoli_alimentari_verificati: bool = Field(False, description="True se è stato chiesto esplicitamente delle allergie")
+    obiettivo_raggiunto: bool = Field(False)
 
-# Funzione helper per convertire lo stato in testo per l'LLM
-def stato_to_text(profilo: ProfiloUtente) -> str:
-    text = "STATO ATTUALE:\n"
-    if not profilo.ingredienti:
-        text += "- Nessun ingrediente noto.\n"
-    else:
-        text += "Ingredienti:\n"
-        for i in profilo.ingredienti:
-            scadenza = " (IN SCADENZA)" if i.scadenza_vicina else ""
-            qty = f", qta: {i.quantita}" if i.quantita else ""
-            text += f"- {i.nome}{qty}{scadenza}\n"
+def stato_to_text(p: ProfiloUtente) -> str:
+    """Trasforma lo stato in testo leggibile per l'LLM"""
+    text = f"STATO ATTUALE:\n"
+    text += f"- Numero Persone: {p.n_persone if p.n_persone else 'Sconosciuto'}\n"
+    text += f"- Vincoli Verificati: {'Sì' if p.vincoli_alimentari_verificati else 'No'}\n"
     
-    if profilo.vincoli_alimentari:
-        text += f"Vincoli/Preferenze: {', '.join(profilo.vincoli_alimentari)}\n"
+    if not p.ingredienti:
+        text += "- Dispensa: Vuota.\n"
     else:
-        text += "Vincoli: Nessuno specificato.\n"
+        text += " - Ingredienti:\n"
+        for i in p.ingredienti:
+            text += f"   * {i.nome} ({i.quantita or 'q.b.'})\n"
+    
+    text += f"- Allergie/Preferenze: {', '.join(p.vincoli_alimentari) if p.vincoli_alimentari else 'Nessuna nota'}\n"
     return text
