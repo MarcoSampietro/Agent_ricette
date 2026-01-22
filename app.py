@@ -2,7 +2,7 @@ import streamlit as st
 from logic import processa_messaggio
 from state import ProfiloUtente
 
-st.set_page_config(page_title="Mediterranean Agent", layout="wide", page_icon="🍅")
+st.set_page_config(page_title="Chef AI + Critic", layout="wide")
 
 if "stato_profilo" not in st.session_state:
     st.session_state.stato_profilo = ProfiloUtente()
@@ -10,45 +10,42 @@ if "stato_profilo" not in st.session_state:
 if "messages" not in st.session_state:
     st.session_state.messages = []
 
-# SIDEBAR: Monitoraggio Slot
+# --- SIDEBAR: MONITORAGGIO TOKEN ---
 with st.sidebar:
-    st.header("🧠 Memoria Agente")
+    st.header("📊 Monitoraggio Token")
+    budget = st.session_state.stato_profilo.budget_token
+    consumati = st.session_state.stato_profilo.token_totali
+    percentuale = min(consumati / budget, 1.0)
     
-    # Mandatory Slots Check
-    p = st.session_state.stato_profilo
-    st.metric("Commensali", p.n_persone if p.n_persone else "???")
+    st.progress(percentuale)
+    st.write(f"Token Usati: {consumati} / {budget}")
     
-    status_vincoli = "✅ Verificati" if p.vincoli_alimentari_verificati else "❌ Da chiedere"
-    st.write(f"**Vincoli:** {status_vincoli}")
-    
+    if percentuale > 0.8:
+        st.warning("Attenzione: Stai per esaurire i token gratuiti!")
+
     st.divider()
     st.subheader("🛒 Dispensa")
-    for ing in p.ingredienti:
-        st.caption(f"- {ing.nome} ({ing.quantita or 'q.b.'})")
-    
-    if st.button("Pulisci Memoria"):
-        st.session_state.stato_profilo = ProfiloUtente()
-        st.rerun()
+    for ing in st.session_state.stato_profilo.ingredienti:
+        st.caption(f"- {ing.nome}")
 
-# CHAT
-st.title("👨‍🍳 AI Mediterranean Chef")
-st.info("Fornisci ingredienti, numero di persone e allergie per sbloccare la ricerca ricette.")
+# --- CHAT ---
+st.title("👨‍🍳 Mediterranean AI Agent")
 
 for msg in st.session_state.messages:
     with st.chat_message(msg["role"]):
         st.markdown(msg["content"])
 
-if prompt := st.chat_input("Es: Ho pasta e tonno, siamo in 2 e nessuna allergia"):
+if prompt := st.chat_input("Cosa cuciniamo?"):
     st.session_state.messages.append({"role": "user", "content": prompt})
     with st.chat_message("user"):
         st.markdown(prompt)
 
-    with st.spinner("Ragionando..."):
+    with st.spinner("Lo Chef sta scrivendo e il Critico sta controllando..."):
         risposta, nuovo_stato = processa_messaggio(prompt, st.session_state.stato_profilo)
         st.session_state.stato_profilo = nuovo_stato
         
         st.session_state.messages.append({"role": "assistant", "content": risposta})
         with st.chat_message("assistant"):
             st.markdown(risposta)
-            
+    
     st.rerun()
